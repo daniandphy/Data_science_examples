@@ -1,0 +1,208 @@
+Title
+========================================================
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring web pages (click the **Help** toolbar button for more details on using R Markdown).
+
+When you click the **Knit HTML** button a web page will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r fig.width=7, fig.height=6}
+plot(cars)
+```
+require(boot)
+require(ggplot2)
+require(gridExtra)
+cm_impression<-read.csv("cm_impression.csv")
+cm_user<-read.csv("cm_user.csv")
+cm_geo<-read.csv("cm_geo.csv")
+temp_merge<-merge(cm_impression,cm_user,all=TRUE)
+all_data_df<-merge(temp_merge,cm_geo,all=TRUE)
+#######################question1
+data_with_impression.id_user.id<-subset(all_data_df,!is.na(all_data_df$impression.id) &!is.na(all_data_df$user.id))
+states_data_withunique_userid<-subset(data_with_impression.id_user.id,subset=!duplicated(data_with_impression.id_user.id$user.id),select="state")
+number_of_unique_user_per_state<-table(states_data_withunique_userid)
+sort(number_of_unique_user_per_state,decreasing=TRUE)[1:10]
+##resuts is 
+"
+ states_data_withunique_userid
+   NY    TX    FL    NJ    PA    CA    GA    NC    IL    MD 
+98992 73186 62761 54495 46453 40807 37189 27424 25672 24516 
+"
+###############END_of_question_1
+############################################Question2
+
+##this function calculate the interaction rate from a given dataframe
+interaction_rate<-function(sub_df){
+aggregated_interaction_by_impression<-aggregate(sub_df$any.interaction,list(impression.id=sub_df$impression.id),sum)
+
+int_rate<-sum(sign(aggregated_interaction_by_impression$x))/length(aggregated_interaction_by_impression$impression.id)
+return (int_rate)
+}
+##### END of interaction rate function
+unique.user.id_NO_geo<-subset(all_data_df,is.na(all_data_df$state) & !is.na(all_data_df$impression.id))
+dim(unique.user.id_NO_geo)
+interaction_rate_nogeo<-interaction_rate(unique.user.id_NO_geo)
+
+############################################END of Question2
+####ATTENTION: I reconstruct my data.frame by removing incompelete cases
+
+temp_merge<-merge(cm_impression,cm_user)
+all_data_df<-merge(temp_merge,cm_geo)  ##now all_data_df is only contains the complete cases
+#########################################################################################Question 3
+### this function calculate the interaction rate using the specified index for the dataframe "df". this can be used in bootstrappingof interaction rate
+interaction_rate.fn<-function(df,index){
+return(interaction_rate(df[index,]))
+}
+############################################# defining a function for calculation of dist 
+#### this function calculate the value of FUN for given col_name(i.e. xvariable) in data_frame it aslo can calculate the confidence interval for each point in FUN using bootstrapping method and return all result in a new data_frame
+
+dist_of_FUN_vs_given_xvariable<-function(data_frame,FUN,yvariable_name='outputname_col',given_xvariable,boot_analysis=FALSE,boot_repeat=100,random_seed=1,FUN.fn=none,conf_int=0.95){
+set.seed(random_seed)
+##initializing data frame
+if (boot_analysis){
+  FUN_vs_xvar_df<-data.frame(t(rep(NA,4)))
+  names(FUN_vs_xvar_df)<-c(as.character(given_xvariable),as.character(yvariable_name),'bs_lower_CI','bs_higher_CI')
+
+}
+else{
+  FUN_vs_xvar_df<-data.frame(t(rep(NA,2)))
+  names(FUN_vs_xvar_df)<-c(as.character(given_xvariable),as.character(yvariable_name))
+}
+##rm NAs
+FUN_vs_xvar_df<-FUN_vs_xvar_df[-1,]
+######looping over unique xvariable
+
+for (xvariable in unique(data_frame[,given_xvariable])){
+###subsetizing dataframe for a given_xvariable
+      sub_df<-subset(data_frame,data_frame[given_xvariable]==xvariable)
+      #print(xvariable)
+      print(length(sub_df[,1]))
+###building_result
+      if (boot_analysis){
+            if (length(unique(sub_df[,'any.interaction']))>1){  #IFF all the values of data frame are not equal, confidence intervals in not defined
+            boot.out<-boot(sub_df,FUN.fn,R=boot_repeat)
+            yvariable<-as.numeric(boot.out[1])
+            conf_list<-boot.ci(boot.out,type="basic", conf=conf_int)[4]
+            conf_df<-data.frame(conf_list)
+            lower_conf_int=as.numeric(conf_df[4])
+            higher_conf_int=as.numeric(conf_df[5])
+            
+            FUN_vs_xvar_df[nrow(FUN_vs_xvar_df)+1,]<-c(xvariable,yvariable,lower_conf_int,higher_conf_int)
+            
+            }
+            else{  ###IFF all the values of data frame are equal, confidence intervals in not defined
+              yvariable<-FUN(sub_df)
+              FUN_vs_xvar_df[nrow(FUN_vs_xvar_df)+1,]<-c(xvariable,yvariable,NA,NA)
+              
+            }
+      }
+      else{
+            yvariable<-FUN(sub_df)
+            #print(yvariable)
+            FUN_vs_xvar_df[nrow(FUN_vs_xvar_df)+1,]<-c(xvariable,yvariable)
+            
+      }
+
+}
+
+return(FUN_vs_xvar_df)
+}
+############################################# END of defining a function for calculation of dist 
+################################calculation part of Question 3
+########NO bootstrapping version
+site.id_interaction.rate_df<-dist_of_FUN_vs_given_xvariable(cm_impression,FUN=interaction_rate,yvariable_name='int_rate',given_xvariable='site.id')
+
+ordered_site.id_interaction.rate_df<-site.id_interaction.rate_df[order(site.id_interaction.rate_df$int_rate,decreasing=TRUE),]
+ordered_site.id_interaction.rate_df[1:5,]
+"#### the result is: 
+  site.id     int_rate
+295      65        1.0000000
+302     114        1.0000000
+177      52        0.4465409
+7       225        0.4339731
+124     116        0.3806147
+"
+##################WITH bootstrapping version
+###This gives you the results with confidence intervarl 
+bs_site.id_interaction.rate_df <-dist_of_FUN_vs_given_xvariable(cm_impression,FUN=interaction_rate,yvariable_name='int_rate',given_xvariable='site.id',boot_analysis=TRUE,FUN.fn=interaction_rate.fn,boot_repeat=10)
+###picking the completes cases with defined confidence interval
+bs_site.id_interaction.rate_df_com_cases<-bs_site.id_interaction.rate_df[complete.cases(bs_site.id_interaction.rate_df),]
+ordered_bs_site.id_interaction.rate_df_com_cases<-bs_site.id_interaction.rate_df_com_cases[order(bs_site.id_interaction.rate_df_com_cases$int_rate,decreasing=TRUE),]
+
+####this is result
+"
+      site.id  int_rate bs_lower_CI bs_higher_CI
+177      52 0.4465409   0.4353703    0.4860466
+7       225 0.4339731   0.4302337    0.4376384
+124     116 0.3806147   0.3490156    0.3908589
+5       215 0.3500690   0.3467903    0.3515207
+156     111 0.3213115   0.2972621    0.3599004
+"
+############################################################end of question 3
+
+#################### question 4
+
+##this function calculate the number of impressiom from a given dataframe
+impression_num<-function(sub_df){
+return (length(sub_df$impression.id))
+}
+#################for the hour of the day
+hour_weekday_df<-subset(all_data_df,! day.of.week %in% c("SUNDAY   ","SATURDAY "))
+hour_weekend_df<-subset(all_data_df,day.of.week %in% c("SUNDAY   ","SATURDAY "))
+xvariable<-'hour'
+
+####for weekdays
+temp_int_rate_vs_xvariable<-dist_of_FUN_vs_given_xvariable(hour_weekday_df,FUN=interaction_rate,yvariable_name='int_rate',given_xvariable=xvariable)
+temp_impr_num_vs_xvariable<-dist_of_FUN_vs_given_xvariable(hour_weekday_df,FUN=impression_num,yvariable_name='num_impression',given_xvariable=xvariable)
+plot1<-qplot(temp_int_rate_vs_xvariable[,xvariable],temp_int_rate_vs_xvariable[,'int_rate'],xlab=xvariable,ylab='interaction rate',main="weekdays")
+plot2<-qplot(temp_impr_num_vs_xvariable[,xvariable],temp_impr_num_vs_xvariable[,'num_impression'],xlab=xvariable,ylab='number of impressions')
+name=paste("Q4_",xvariable,"_weekdays.pdf")
+pdf(file=name)
+grid.arrange(plot1,plot2,nrow=2)
+dev.off()
+#####for weekend
+temp_int_rate_vs_xvariable<-dist_of_FUN_vs_given_xvariable(hour_weekend_df,FUN=interaction_rate,yvariable_name='int_rate',given_xvariable=xvariable)
+temp_impr_num_vs_xvariable<-dist_of_FUN_vs_given_xvariable(hour_weekend_df,FUN=impression_num,yvariable_name='num_impression',given_xvariable=xvariable)
+
+plot1<-qplot(temp_int_rate_vs_xvariable[,xvariable],temp_int_rate_vs_xvariable[,'int_rate'],xlab=xvariable,ylab='interaction rate',main="weekend")
+plot2<-qplot(temp_impr_num_vs_xvariable[,xvariable],temp_impr_num_vs_xvariable[,'num_impression'],xlab=xvariable,ylab='number of impressions')
+name=paste("Q4_",xvariable,"_weekend.pdf")
+pdf(file=name)
+grid.arrange(plot1,plot2,nrow=2)
+dev.off()
+################## for the rest of variables
+
+###c('day.of.week','browser.id','connection.type.id','region','ad.size')
+for (xvariable in c('day.of.week','browser.id','connection.type.id','region','ad.size')){
+  temp_int_rate_vs_xvariable<-dist_of_FUN_vs_given_xvariable(all_data_df,FUN=interaction_rate,yvariable_name='int_rate',given_xvariable=xvariable)
+  temp_impr_num_vs_xvariable<-dist_of_FUN_vs_given_xvariable(all_data_df,FUN=impression_num,yvariable_name='num_impression',given_xvariable=xvariable)
+  plot1<-qplot(temp_int_rate_vs_xvariable[,xvariable],temp_int_rate_vs_xvariable[,'int_rate'],xlab=xvariable,ylab='interaction rate')
+  plot2<-qplot(temp_impr_num_vs_xvariable[,xvariable],temp_impr_num_vs_xvariable[,'num_impression'],xlab=xvariable,ylab='number of impressions')
+  name=paste("Q4_",xvariable,".pdf")
+  pdf(file=name)
+  grid.arrange(plot1,plot2,nrow=2)
+  dev.off()
+}
+
+#####Question 5
+hour_region_freq_df<-data.frame(table(all_data_df$hour,all_data_df$region))
+colnames(hour_region_freq_df)<-c("hour","region","freq")
+plot1<-qplot(x=hour,y=region,data=hour_region_freq_df,xlab='hour',ylab='region',size=freq,main="Q5")+scale_size(range=c(2,20))
+
+###########Question6
+
+sums=tapply(hour_region_freq_df$freq,hour_region_freq_df$region,sum)
+sum.ext=sums[match(hour_region_freq_df$region,names(sums))]
+
+hour_region_freq_df["weight"]=hour_region_freq_df$freq/sum.ext
+plot2<-qplot(x=hour,y=region,data=hour_region_freq_df,xlab='hour',ylab='region',size=weight,main="Q6")+scale_size(range=c(2,20))
+pdf(file="Q5_6.pdf")
+grid.arrange(plot1,plot2,nrow=2)
+dev.off()
+#################END of Question 6
+
