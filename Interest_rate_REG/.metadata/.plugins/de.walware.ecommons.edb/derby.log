@@ -1,0 +1,16 @@
+----------------------------------------------------------------
+Sat Nov 16 11:51:23 CST 2013:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.8.2.2 - (1181258): instance a816c00e-0142-6209-dd5c-ffffc72931f2 
+on database directory /Users/dani/Dropbox/Computer_science/data_analysis/homeworks/project_1/.metadata/.plugins/de.walware.statet.r.core/db  with class loader org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader@7fa87069[de.walware.thirdparty-org.apache.derby.core:10.8.2000002.b201306021645E42sw(id=283)] 
+Loaded from file:/Applications/eclipse/plugins/de.walware.thirdparty-org.apache.derby.core_10.8.2000002.b201306021645E42sw.jar
+java.vendor=Apple Inc.
+java.runtime.version=1.6.0_65-b14-462-11M4609
+user.dir=/Applications/eclipse/Eclipse.app/Contents/MacOS
+derby.system.home=/Users/dani/Dropbox/Computer_science/data_analysis/homeworks/project_1/.metadata/.plugins/de.walware.ecommons.edb
+Database Class Loader started - derby.database.classpath=''
+----------------------------------------------------------------
+Sat Nov 16 13:34:03 CST 2013: Shutting down Derby engine
+----------------------------------------------------------------
+Sat Nov 16 13:34:03 CST 2013:
+Shutting down instance a816c00e-0142-6209-dd5c-ffffc72931f2 on database directory /Users/dani/Dropbox/Computer_science/data_analysis/homeworks/project_1/.metadata/.plugins/de.walware.statet.r.core/db with class loader org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader@7fa87069[de.walware.thirdparty-org.apache.derby.core:10.8.2000002.b201306021645E42sw(id=283)] 
+----------------------------------------------------------------

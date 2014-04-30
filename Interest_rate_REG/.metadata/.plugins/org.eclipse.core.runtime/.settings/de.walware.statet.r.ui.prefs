@@ -1,0 +1,7 @@
+RConnector/rconnector.id=de.walware.statet.r.launching.RNewConsoleConnector
+de.walware.statet.r.ui.text.r_code_templates=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?><templates/>
+de.walware.statet.r.ui.text.rd_code_templates=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?><templates/>
+eclipse.preferences.version=1
+renv/index.console_update.mode=auto
+useAnnotationsPrefPage=true
+useQuickDiffPrefPage=true
