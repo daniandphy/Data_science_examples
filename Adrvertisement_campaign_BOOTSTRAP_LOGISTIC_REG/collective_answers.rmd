@@ -1,14 +1,14 @@
-Title
+Estimating advertisement’s click through rates
 ========================================================
 
-require(boot)
-require(ggplot2)
-require(gridExtra)
-cm_impression<-read.csv("cm_impression.csv")
-cm_user<-read.csv("cm_user.csv")
-cm_geo<-read.csv("cm_geo.csv")
-temp_merge<-merge(cm_impression,cm_user,all=TRUE)
-all_data_df<-merge(temp_merge,cm_geo,all=TRUE)
+require(boot);
+require(ggplot2);
+require(gridExtra);
+cm_impression<-read.csv("cm_impression.csv");
+cm_user<-read.csv("cm_user.csv");
+cm_geo<-read.csv("cm_geo.csv");
+temp_merge<-merge(cm_impression,cm_user,all=TRUE);
+all_data_df<-merge(temp_merge,cm_geo,all=TRUE);
 #######################question1
 data_with_impression.id_user.id<-subset(all_data_df,!is.na(all_data_df$impression.id) &!is.na(all_data_df$user.id))
 states_data_withunique_userid<-subset(data_with_impression.id_user.id,subset=!duplicated(data_with_impression.id_user.id$user.id),select="state")
